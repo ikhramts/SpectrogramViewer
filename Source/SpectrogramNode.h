@@ -1,29 +1,42 @@
 //This prevents include loops. We recommend changing the macro to a name suitable for your plugin
-#ifndef PROCESSORPLUGIN_H_DEFINED
-#define PROCESSORPLUGIN_H_DEFINED
+#pragma once
+
+#include <vector>
 
 #include <ProcessorHeaders.h>
+#include "SpectrogramEditor.h"
 
 //namespace must be an unique name for your plugin
-namespace ProcessorPluginSpace
+namespace SpectrogramViewer
 {
-	class ProcessorPlugin : public GenericProcessor
+	class SpectrogramNode : public GenericProcessor
 	{
 	public:
+		static const int PARAM_CHANNEL = 0;
+		static const int PARAM_MAX_SHOWN_FREQ = 1;
+		static const int PARAM_STEP_LENGTH_SEC = 2;
+		static const int PARAM_CHART_LENGTH_SEC = 3;
+
 		/** The class constructor, used to initialize any members. */
-		ProcessorPlugin();
+		SpectrogramNode();
 
 		/** The class destructor, used to deallocate memory */
-		~ProcessorPlugin();
+		~SpectrogramNode();
 
 		/** Indicates if the processor has a custom editor. Defaults to false */
-		//bool hasEditor() const { return true; }
+		bool hasEditor() const { return true; }
 
 		/** If the processor has a custom editor, this method must be defined to instantiate it. */
-		//AudioProcessorEditor* createEditor() override;
+		AudioProcessorEditor* createEditor() override;
 
-		/** Optional method that informs the GUI if the processor is ready to function. If false acquisition cannot start. Defaults to true */
-		//bool isReady();
+		/** Called immediately prior to the start of data acquisition, once all processors in the signal chain have indicated they are ready to process data.*/
+		virtual bool enable() override;
+
+		/** Called immediately after the end of data acquisition.*/
+		virtual bool disable() override;
+
+		/** Returns true if a processor is ready to process data (e.g., all of its parameters are initialized, and its data source is connected).*/
+		virtual bool isReady() override { return selectedChannel >= 0; }
 
 		/** Defines the functionality of the processor.
 
@@ -52,7 +65,17 @@ namespace ProcessorPluginSpace
 		/** The method that standard controls on the editor will call.
 		It is recommended that any variables used by the "process" function
 		are modified only through this method while data acquisition is active. */
-		//void setParameter(int parameterIndex, float newValue) override;
+		void setParameter(int parameterIndex, float newValue) override;
+
+		/** Returns the current value of a parameter with a given index.
+		Currently set to always return 1. See getParameterVar below*/
+		float getParameter(int parameterIndex) override;
+
+		/** Returns the number of user-editable parameters for this processor.*/
+		int getNumParameters() override { return 4; }
+
+		/** Returns the name of the parameter with a given index.*/
+		const String getParameterName(int parameterIndex) override;
 
 		/** Saving custom settings to XML. */
 		//void saveCustomParametersToXml(XmlElement* parentElement) override;
@@ -70,7 +93,30 @@ namespace ProcessorPluginSpace
 		*/
 		//void updateSettings() override;
 
+		float getMaxShownFrequency() const { return maxShownFrequency; }
+		float getStepLengthSec() const { return stepLengthSec; }
+		float getChartLengthSec() const { return chartLengthSec; }
+
+	private:
+		int selectedChannel;
+		float maxShownFrequency = 300;
+		float stepLengthSec = 0.1;
+		float chartLengthSec = 5;
+
+		std::vector<float> fftInBuffer;
+		int leftoverSamples = 0;
+
+		std::vector<float> spectrogram;
+		int freqsPerSpectrogramColumn;
+		float sqrtBandwidth;
+
+		void resizeBuffers();
+
+		void calcSpectrogram(
+			const std::vector<float>& inBuf,
+			std::vector<float>& outBuf,
+			float sqrtBandwidth) const;
+
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrogramNode);
 	};
 }
-
-#endif
