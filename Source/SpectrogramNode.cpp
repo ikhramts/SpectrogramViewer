@@ -79,6 +79,7 @@ void SpectrogramNode::process(AudioSampleBuffer& buffer)
 	// Otherwise, we'll have some leftover samples that should be combined with the
 	// next batch of samples.
 	leftoverSamples = toInSample - fromInSample;
+	lastDataUpdateTime = Time::currentTimeMillis();
 }
 
 void SpectrogramNode::setParameter(int paramIndex, float newValue)
@@ -138,11 +139,15 @@ const String SpectrogramNode::getParameterName(int parameterIndex)
 
 bool SpectrogramNode::enable()
 {
+	auto editor = (SpectrogramEditor*)getEditor();
+	editor->enable();
 	return true;
 }
 
 bool SpectrogramNode::disable()
 {
+	auto editor = (SpectrogramEditor*)getEditor();
+	editor->disable();
 	return true;
 }
 
@@ -171,14 +176,18 @@ void SpectrogramNode::calcSpectrogram(
 	std::vector<float>& outBuf,
 	float sqrtBandwidth) const
 {
-	pocketfft::detail::shape_t shape_in{ inBuf.size() };
-	pocketfft::detail::stride_t stride_in(1);
-	pocketfft::detail::stride_t stride_out(1);
+	pocketfft::detail::shape_t shape_in { inBuf.size() };
+	pocketfft::detail::stride_t stride_in { sizeof(float) };
+	pocketfft::detail::stride_t stride_out { sizeof(float) };
 
 	std::vector<std::complex<float>> fftResult(inBuf.size() / 2 + 1);
 	bool forward = true;
+
+	// All incoming data is in microvolts, so we'll need to adjust the scaling factor accordingly.
+	auto scalingFactor = 1 / sqrtBandwidth / 1000000;
+
 	pocketfft::detail::r2c(
-		shape_in, stride_in, stride_out, 0, forward, inBuf.data(), fftResult.data(), 1 / sqrtBandwidth);
+		shape_in, stride_in, stride_out, 0, forward, inBuf.data(), fftResult.data(), scalingFactor);
 
 	for (int i = 0; i < outBuf.size(); i++)
 	{

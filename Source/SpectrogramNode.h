@@ -97,6 +97,11 @@ namespace SpectrogramViewer
 		float getStepLengthSec() const { return stepLengthSec; }
 		float getChartLengthSec() const { return chartLengthSec; }
 
+		const std::vector<float>& getSpectrogram() const { return spectrogram; }
+		int getNumFreqsPerSpectrigramColumn() const { return freqsPerSpectrogramColumn; }
+		int getNumSpectrogramColumns() const { return chartLengthSec / stepLengthSec; }
+		int64 getLastDataUpdateTime() const { return lastDataUpdateTime; }
+
 	private:
 		int selectedChannel;
 		float maxShownFrequency = 300;
@@ -109,6 +114,8 @@ namespace SpectrogramViewer
 		std::vector<float> spectrogram;
 		int freqsPerSpectrogramColumn;
 		float sqrtBandwidth;
+
+		int64 lastDataUpdateTime = 0;
 
 		void resizeBuffers();
 

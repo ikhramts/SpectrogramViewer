@@ -76,7 +76,7 @@ SpectrogramEditor::SpectrogramEditor(SpectrogramNode* processor)
 	addAndMakeVisible(stepLengthUnitLabel);
 
 	// Chart length textbox
-	chartLengthLabel = new Label("chartLengthLabel", "Step length");
+	chartLengthLabel = new Label("chartLengthLabel", "Chart history");
 	chartLengthLabel->setFont(Font(Font::getDefaultSerifFontName(), 14, Font::plain));
 	chartLengthLabel->setBounds(10, 100, 85, 20);
 	chartLengthLabel->setColour(Label::textColourId, Colours::black);
